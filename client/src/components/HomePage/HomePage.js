@@ -4,11 +4,12 @@ import { Button } from "primereact/button";
 
 import DailyOrderTable from "../DailyOrderTable";
 
+import OrdersPage from "../OrdersPage";
+
 function HomePage() {
   return (
     <div>
-      <h1>Order Manager</h1>
-      <DailyOrderTable />
+      <OrdersPage />
     </div>
   );
 }

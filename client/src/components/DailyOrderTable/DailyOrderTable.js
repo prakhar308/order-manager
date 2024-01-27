@@ -9,117 +9,81 @@ import { ColumnGroup } from "primereact/columngroup";
 import { Row } from "primereact/row";
 import { Button } from "primereact/button";
 import { produce } from "immer";
+import { Link } from "react-router-dom";
+import { Toast } from "primereact/toast";
 
 import ProductSearch from "../ProductSearch";
 
+import orderReducer from "../../reducers/order-reducer";
+
 function DailyOrderTable() {
-  const [order, setOrder] = React.useState({ items: [] });
+  const [order, dispatch] = React.useReducer(orderReducer, {
+    id: crypto.randomUUID(),
+    date: new Date(),
+    items: [
+      {
+        lineId: 1,
+        product: null,
+        saleQty: null,
+        returnQty: null,
+        total: null,
+      },
+    ],
+    total: null,
+  });
+  const toast = React.useRef(null);
 
   console.log(order);
 
-  React.useEffect(() => {
-    // read from localStorage or API later
-    const order = {
-      date: null,
-      items: [
-        {
-          lineId: 1,
-          product: {
-            code: "180",
-            name: "Dahi 400g",
-            brand: "Gowardhan",
-            unitTypes: ["pcs", "case"],
-            price: {
-              salePrice: 70,
-            },
-            weight: { unit: "g", value: 400 },
-            casePacking: 24,
-          },
-          saleQty: {
-            unit: "pcs",
-            qty: 10,
-          },
-          unitPrice: 70,
-          returnQty: {
-            unit: "pcs",
-            qty: 2,
-          },
-          total: 560,
-        },
-        {
-          lineId: 2,
-          product: {
-            code: "181",
-            name: "Dahi PP 500g",
-            brand: "Gowardhan",
-            unitTypes: ["pcs", "case"],
-            price: {
-              salePrice: 80,
-            },
-            weight: { unit: "g", value: 500 },
-            casePacking: 24,
-          },
-          unitPrice: 80,
-          saleQty: {
-            unit: "case",
-            qty: 1,
-          },
-          returnQty: {
-            unit: "pcs",
-            qty: 2,
-          },
-          total: 1760,
-        },
-        {
-          lineId: 3,
-          product: {
-            code: "200",
-            name: "Paneer 200g",
-            brand: "Gowardhan",
-            unitTypes: ["pcs", "case"],
-            price: {
-              salePrice: 80,
-            },
-            weight: { unit: "g", value: 200 },
-            casePacking: 24,
-          },
-          unitPrice: 90,
-          saleQty: {
-            unit: "pcs",
-            qty: 10,
-          },
-          total: 990,
-        },
-      ],
-      total: 1700,
-    };
+  const saveOrder = () => {
+    // remove the last empty item
+    const nextState = produce(order, (draftState) => {
+      draftState.items.pop();
+    });
 
-    // const order = { items: [] };
+    let orders = JSON.parse(localStorage.getItem("orders"));
 
-    // push emty row at the end
-    const newItem = {
-      lineId: order.items.length + 1,
-      product: null,
-      saleQty: null,
-      returnQty: null,
-      total: null,
-    };
-    order.items.push(newItem);
-    setOrder(order);
-  }, []);
+    if (!orders) {
+      orders = [nextState];
+    } else {
+      const index = orders.findIndex((o) => o.id === order.id);
+      if (index !== -1) {
+        orders.splice(index, 1, nextState);
+      } else {
+        orders.push(nextState);
+      }
+    }
+
+    localStorage.setItem("orders", JSON.stringify(orders));
+    toast.current.show({
+      severity: "success",
+      summary: "Success",
+      detail: "Order Saved",
+      life: 3000,
+    });
+  };
+
+  const getTabIndex = (lineId) => {
+    // remove navigation from all rows except last row
+    if (lineId === order.items.length) {
+      return 0;
+    } else {
+      return -1;
+    }
+  };
 
   const handlePriceChange = (lineId, price) => {
-    const nextState = produce(order, (draftState) => {
-      const item = draftState.items.find((item) => item.lineId === lineId);
-      item.unitPrice = price;
-      recalculateTotals(draftState);
+    dispatch({
+      type: "update-unit-price",
+      lineId,
+      price,
     });
-    setOrder(nextState);
   };
 
   const priceEditor = (lineId, price) => {
     return (
       <InputNumber
+        tabIndex={getTabIndex(lineId)}
         value={price}
         onValueChange={(e) => handlePriceChange(lineId, e.value)}
         mode="currency"
@@ -130,37 +94,25 @@ function DailyOrderTable() {
   };
 
   const handleUnitChange = (lineId, unit, type) => {
-    const nextState = produce(order, (draftState) => {
-      const item = draftState.items.find((item) => item.lineId === lineId);
-
-      if (type === "sale") {
-        if (!unit) {
-          item.saleQty = null;
-        } else if (item.saleQty) {
-          item.saleQty.unit = unit;
-        } else {
-          item.saleQty = { unit };
-        }
-      }
-
-      if (type === "return") {
-        if (!unit) {
-          item.returnQty = null;
-        } else if (item.returnQty) {
-          item.returnQty.unit = unit;
-        } else {
-          item.returnQty = { unit };
-        }
-      }
-
-      recalculateTotals(draftState);
-    });
-    setOrder(nextState);
+    if (type === "sale") {
+      dispatch({
+        type: "update-sale-unit",
+        lineId,
+        unit,
+      });
+    } else if (type === "return") {
+      dispatch({
+        type: "update-return-unit",
+        lineId,
+        unit,
+      });
+    }
   };
 
   const unitEditor = (lineId, unit, type) => {
     return (
       <Dropdown
+        tabIndex={getTabIndex(lineId)}
         value={unit}
         placeholder="Select Unit"
         options={["pcs", "case"]}
@@ -171,32 +123,25 @@ function DailyOrderTable() {
   };
 
   const handleQtyChange = (lineId, qty, type) => {
-    const nextState = produce(order, (draftState) => {
-      const item = draftState.items.find((item) => item.lineId === lineId);
-
-      if (type === "sale") {
-        if (item.saleQty) {
-          item.saleQty.qty = qty;
-        } else {
-          item.saleQty = { qty };
-        }
-      }
-
-      if (type === "return") {
-        if (item.returnQty) {
-          item.returnQty.qty = qty;
-        } else {
-          item.returnQty = { qty };
-        }
-      }
-      recalculateTotals(draftState);
-    });
-    setOrder(nextState);
+    if (type === "sale") {
+      dispatch({
+        type: "update-sale-qty",
+        lineId,
+        qty,
+      });
+    } else if (type === "return") {
+      dispatch({
+        type: "update-return-qty",
+        lineId,
+        qty,
+      });
+    }
   };
 
   const qtyEditor = (lineId, qty, type) => {
     return (
       <InputNumber
+        tabIndex={getTabIndex(lineId)}
         value={qty}
         onValueChange={(e) => handleQtyChange(lineId, e.value, type)}
       />
@@ -204,60 +149,37 @@ function DailyOrderTable() {
   };
 
   const handleProductChange = (lineId, product) => {
-    const nextState = produce(order, (draftState) => {
-      const item = draftState.items.find((item) => item.lineId === lineId);
-      item.product = product;
-      item.unitPrice = product.price.salePrice;
+    dispatch({
+      type: "update-product",
+      lineId,
+      product,
     });
-
-    setOrder(nextState);
-  };
-
-  const recalculateTotals = (draftState) => {
-    let orderTotal = 0;
-    draftState?.items.forEach((item) => {
-      const unitPrice = item.unitPrice || item.product?.price?.salePrice || 0;
-
-      let saleQty = 0;
-      if (!item.saleQty) {
-        saleQty = 0;
-      } else if (item.saleQty.unit == "case") {
-        saleQty = item.product.casePacking * item.saleQty.qty;
-      } else {
-        saleQty = item.saleQty.qty;
-      }
-
-      let returnQty = 0;
-      if (!item.returnQty) {
-        returnQty = 0;
-      } else if (item.returnQty.unit == "case") {
-        returnQty = item.product.casePacking * item.returnQty.qty;
-      } else {
-        returnQty = item.returnQty.qty;
-      }
-
-      item.total = (saleQty - returnQty) * unitPrice || 0;
-      orderTotal += item.total;
-    });
-    draftState.total = orderTotal;
   };
 
   const addItemToOrder = () => {
-    // Actually the item is already added. We just to need to add an an empty row
-    const emptyItem = {
-      lineId: order.items.length + 1,
-      product: null,
-      saleQty: null,
-      returnQty: null,
-      total: null,
-    };
-
-    const nextState = produce(order, (draftState) => {
-      draftState.items.push(emptyItem);
-      recalculateTotals(draftState);
+    dispatch({
+      type: "add-empty-item",
     });
+  };
 
-    setOrder(nextState);
+  const deleteOrderItem = (lineId) => {
+    dispatch({
+      type: "delete-item",
+      lineId,
+    });
+  };
+
+  const actionBodyTemplate = (lineId) => {
+    return (
+      <Button
+        tabIndex="-1"
+        icon="pi pi-trash"
+        rounded
+        outlined
+        severity="danger"
+        onClick={() => deleteOrderItem(lineId)}
+      />
+    );
   };
 
   const headerGroup = (
@@ -269,6 +191,7 @@ function DailyOrderTable() {
         <Column header="Unit Price" rowSpan={2} />
         <Column header="Return" colSpan={2} />
         <Column header="Total" rowSpan={2} />
+        <Column rowSpan={2} />
       </Row>
       <Row>
         <Column header="Unit" field="saleQty.unit" />
@@ -288,18 +211,44 @@ function DailyOrderTable() {
           footerStyle={{ textAlign: "right" }}
         />
         <Column footer={order?.total} />
+        <Column />
       </Row>
     </ColumnGroup>
   );
 
+  const header = () => {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <Link to="/" tabIndex="-1">
+          <h2 className="m-0">Orders</h2>
+        </Link>
+        <Button
+          tabIndex="-1"
+          style={{ width: "80px" }}
+          label="Save"
+          severity="success"
+          onClick={() => saveOrder()}
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="card p-fluid">
+      <Toast ref={toast} position="top-center" />
       <DataTable
         showGridlines
         headerColumnGroup={headerGroup}
         footerColumnGroup={footerGroup}
         value={order?.items}
         tableStyle={{ minWidth: "50rem" }}
+        header={header}
       >
         <Column field="lineId" header="Sr.No" style={{ width: "5%" }} />
         <Column
@@ -362,12 +311,16 @@ function DailyOrderTable() {
               <Button
                 label="Add"
                 icon="pi pi-plus"
-                severity="success"
                 onClick={() => addItemToOrder()}
               />
             ) : (
               total
             )
+          }
+        />
+        <Column
+          body={({ lineId }) =>
+            lineId != order.items.length ? actionBodyTemplate(lineId) : null
           }
         />
       </DataTable>

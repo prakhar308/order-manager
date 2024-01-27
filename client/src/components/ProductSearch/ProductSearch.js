@@ -2,6 +2,7 @@ import React from "react";
 import { Dropdown } from "primereact/dropdown";
 
 function ProductSearch({ product, onChange }) {
+  const dropdownRef = React.useRef(null);
   const [selectedProduct, setSelectedProduct] = React.useState(product || null);
   const [products, setProducts] = React.useState([]);
 
@@ -49,10 +50,16 @@ function ProductSearch({ product, onChange }) {
     onChange(event.value);
   };
 
+  const handleHide = () => {
+    dropdownRef.current.focus(); // loses focus when selected through keyboard
+  };
+
   return (
     <Dropdown
+      ref={dropdownRef}
       value={selectedProduct}
       onChange={(e) => handleProductChange(e)}
+      onHide={handleHide}
       options={products}
       optionLabel="name"
       placeholder="Select a Product"
