@@ -6,7 +6,7 @@ function reducer(order, action) {
     const nextState = produce(order, (draftState) => {
       const item = draftState.items.find((item) => item.lineId === lineId);
       item.product = product;
-      item.unitPrice = product.price.salePrice;
+      item.unitPrice = product?.price?.salePrice;
     });
 
     return nextState;

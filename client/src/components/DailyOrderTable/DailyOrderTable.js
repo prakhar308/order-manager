@@ -1,6 +1,5 @@
 import React from "react";
 
-import { InputText } from "primereact/Inputtext";
 import { InputNumber } from "primereact/InputNumber";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
@@ -11,6 +10,7 @@ import { Button } from "primereact/button";
 import { produce } from "immer";
 import { Link } from "react-router-dom";
 import { Toast } from "primereact/toast";
+import { Toolbar } from "primereact/toolbar";
 
 import ProductSearch from "../ProductSearch";
 
@@ -109,10 +109,15 @@ function DailyOrderTable() {
     }
   };
 
+  const isUnitEditorDisabled = (lineId) => {
+    return !order.items.find((item) => item.lineId === lineId)?.product;
+  };
+
   const unitEditor = (lineId, unit, type) => {
     return (
       <Dropdown
         tabIndex={getTabIndex(lineId)}
+        disabled={isUnitEditorDisabled(lineId)}
         value={unit}
         placeholder="Select Unit"
         options={["pcs", "case"]}
@@ -154,6 +159,11 @@ function DailyOrderTable() {
       lineId,
       product,
     });
+  };
+
+  const isAddButtonDisabled = () => {
+    const item = order.items.slice(-1)[0];
+    return !item.product || !item.saleQty?.unit || !item.saleQty.qty;
   };
 
   const addItemToOrder = () => {
@@ -216,39 +226,36 @@ function DailyOrderTable() {
     </ColumnGroup>
   );
 
-  const header = () => {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Link to="/" tabIndex="-1">
-          <h2 className="m-0">Orders</h2>
-        </Link>
-        <Button
-          tabIndex="-1"
-          style={{ width: "80px" }}
-          label="Save"
-          severity="success"
-          onClick={() => saveOrder()}
-        />
-      </div>
-    );
-  };
-
   return (
     <div className="card p-fluid">
       <Toast ref={toast} position="top-center" />
+      <Toolbar
+        className="mb-4"
+        left={
+          <Link to="/" tabIndex="-1">
+            <h2 className="m-0">Orders</h2>
+          </Link>
+        }
+        right={
+          <div className="flex gap-2">
+            <Link to="/" tabIndex="-1">
+              <Button tabIndex="-1" severity="secondary" label="Cancel" />
+            </Link>
+            <Button
+              tabIndex="-1"
+              label="Save"
+              severity="success"
+              onClick={() => saveOrder()}
+            />
+          </div>
+        }
+      />
       <DataTable
         showGridlines
         headerColumnGroup={headerGroup}
         footerColumnGroup={footerGroup}
         value={order?.items}
         tableStyle={{ minWidth: "50rem" }}
-        header={header}
       >
         <Column field="lineId" header="Sr.No" style={{ width: "5%" }} />
         <Column
@@ -311,6 +318,7 @@ function DailyOrderTable() {
               <Button
                 label="Add"
                 icon="pi pi-plus"
+                disabled={isAddButtonDisabled()}
                 onClick={() => addItemToOrder()}
               />
             ) : (

@@ -9,7 +9,12 @@ function OrdersPage() {
   return (
     <div>
       <Toolbar
-        start={<h2 className="m-0">Orders</h2>}
+        start={
+          <div>
+            <h2 className="m-0">Orders</h2>
+            <Link to="/products">Products</Link>
+          </div>
+        }
         end={
           <Link to="/create-new-order">
             <Button

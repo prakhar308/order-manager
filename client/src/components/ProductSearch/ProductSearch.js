@@ -8,41 +8,8 @@ function ProductSearch({ product, onChange }) {
 
   React.useEffect(() => {
     // later read from local storage or API
-    setProducts([
-      {
-        code: "180",
-        name: "Dahi 400g",
-        brand: "Gowardhan",
-        unitTypes: ["pcs", "case"],
-        price: {
-          salePrice: 70,
-        },
-        weight: { unit: "g", value: 400 },
-        casePacking: 24,
-      },
-      {
-        code: "181",
-        name: "Dahi PP 500g",
-        brand: "Gowardhan",
-        unitTypes: ["pcs", "case"],
-        price: {
-          salePrice: 80,
-        },
-        weight: { unit: "g", value: 500 },
-        casePacking: 24,
-      },
-      {
-        code: "200",
-        name: "Paneer 200g",
-        brand: "Gowardhan",
-        unitTypes: ["pcs", "case"],
-        price: {
-          salePrice: 80,
-        },
-        weight: { unit: "g", value: 200 },
-        casePacking: 24,
-      },
-    ]);
+    let _products = JSON.parse(localStorage.getItem("products"));
+    setProducts(_products);
   }, []);
 
   const handleProductChange = (event) => {
@@ -58,13 +25,14 @@ function ProductSearch({ product, onChange }) {
     <Dropdown
       ref={dropdownRef}
       value={selectedProduct}
-      onChange={(e) => handleProductChange(e)}
-      onHide={handleHide}
+      className="w-full md:w-14rem"
       options={products}
       optionLabel="name"
       placeholder="Select a Product"
+      onChange={(e) => handleProductChange(e)}
+      onHide={handleHide}
       filter
-      className="w-full md:w-14rem"
+      showClear
     />
   );
 }
