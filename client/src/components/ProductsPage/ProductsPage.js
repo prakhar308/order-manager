@@ -30,6 +30,8 @@ function ProductsPage() {
   const [product, setProduct] = React.useState(emptyProduct);
   const [products, setProducts] = React.useState([]);
   const [showProductDialog, setShowProductDialog] = React.useState(false);
+  const [showDeleteProductDialog, setShowDeleteProductDialog] =
+    React.useState(false);
   const toast = React.useRef(null);
 
   React.useEffect(() => {
@@ -44,7 +46,12 @@ function ProductsPage() {
     if (!_products) {
       _products = [product];
     } else {
-      _products.push(product);
+      const index = _products.findIndex((p) => p.code === product.code);
+      if (index !== -1) {
+        _products.splice(index, 1, product);
+      } else {
+        _products.push(product);
+      }
     }
 
     localStorage.setItem("products", JSON.stringify(_products));
@@ -73,6 +80,77 @@ function ProductsPage() {
     setProduct(nextState);
   };
 
+  const editProduct = (product) => {
+    setProduct({ ...product });
+    setShowProductDialog(true);
+  };
+
+  const confirmDeleteProduct = (product) => {
+    setProduct(product);
+    setShowDeleteProductDialog(true);
+  };
+
+  const deleteProduct = () => {
+    let _products = products.filter((val) => val.code !== product.code);
+
+    localStorage.setItem("products", JSON.stringify(_products));
+
+    setProducts(_products);
+    setShowDeleteProductDialog(false);
+    setProduct(emptyProduct);
+    toast.current.show({
+      severity: "success",
+      summary: "Successful",
+      detail: "Product Deleted",
+      life: 3000,
+    });
+  };
+
+  const actionBodyTemplate = (rowData) => {
+    return (
+      <React.Fragment>
+        <Button
+          icon="pi pi-pencil"
+          rounded
+          outlined
+          className="mr-2"
+          onClick={() => editProduct(rowData)}
+        />
+        <Button
+          icon="pi pi-trash"
+          rounded
+          outlined
+          severity="danger"
+          onClick={() => confirmDeleteProduct(rowData)}
+        />
+      </React.Fragment>
+    );
+  };
+
+  const formatCurrency = (value) => {
+    return value.toLocaleString("en-US", {
+      style: "currency",
+      currency: "INR",
+    });
+  };
+
+  const deleteProductDialogFooter = (
+    <React.Fragment>
+      <Button
+        label="No"
+        icon="pi pi-times"
+        outlined
+        onClick={() => setShowDeleteProductDialog((x) => !x)}
+      />
+      <Button
+        label="Yes"
+        icon="pi pi-check"
+        severity="danger"
+        onClick={deleteProduct}
+      />
+    </React.Fragment>
+  );
+
   return (
     <div>
       <Toast ref={toast} position="top-center" />
@@ -89,7 +167,10 @@ function ProductsPage() {
               label="Create New Product"
               icon="pi pi-plus"
               severity="success"
-              onClick={() => setShowProductDialog((x) => !x)}
+              onClick={() => {
+                setProduct(emptyProduct);
+                setShowProductDialog((x) => !x);
+              }}
             />
           }
         />
@@ -98,14 +179,16 @@ function ProductsPage() {
           value={products}
           emptyMessage="No products found."
         >
-          <Column field="code" header="Code" style={{ width: "25%" }} />
-          <Column field="name" header="Name" style={{ width: "25%" }} />
-          <Column field="brand" header="Brand" style={{ width: "25%" }} />
+          <Column field="code" header="Code" style={{ width: "20%" }} />
+          <Column field="name" header="Name" style={{ width: "20%" }} />
+          <Column field="brand" header="Brand" style={{ width: "20%" }} />
           <Column
             field="price.salePrice"
             header="Unit Price"
-            style={{ width: "25%" }}
+            body={(rowData) => formatCurrency(rowData.price.salePrice)}
+            style={{ width: "20%" }}
           />
+          <Column body={actionBodyTemplate} exportable={false}></Column>
         </DataTable>
         <Dialog
           visible={showProductDialog}
@@ -227,6 +310,27 @@ function ProductsPage() {
               <Button label="Save" icon="pi pi-check" />
             </div>
           </form>
+        </Dialog>
+        <Dialog
+          visible={showDeleteProductDialog}
+          style={{ width: "32rem" }}
+          breakpoints={{ "960px": "75vw", "641px": "90vw" }}
+          header="Confirm"
+          modal
+          footer={deleteProductDialogFooter}
+          onHide={() => setShowDeleteProductDialog((x) => !x)}
+        >
+          <div className="confirmation-content">
+            <i
+              className="pi pi-exclamation-triangle mr-3"
+              style={{ fontSize: "2rem" }}
+            />
+            {product && (
+              <span>
+                Are you sure you want to delete <b>{product.name}</b>?
+              </span>
+            )}
+          </div>
         </Dialog>
       </div>
     </div>
