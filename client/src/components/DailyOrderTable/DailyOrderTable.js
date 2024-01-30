@@ -231,12 +231,12 @@ function DailyOrderTable() {
       <Toast ref={toast} position="top-center" />
       <Toolbar
         className="mb-4"
-        left={
+        start={
           <Link to="/" tabIndex="-1">
             <h2 className="m-0">Orders</h2>
           </Link>
         }
-        right={
+        end={
           <div className="flex gap-2">
             <Link to="/" tabIndex="-1">
               <Button tabIndex="-1" severity="secondary" label="Cancel" />
