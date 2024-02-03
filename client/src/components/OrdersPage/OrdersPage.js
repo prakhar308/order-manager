@@ -2,17 +2,17 @@ import React from "react";
 
 import { Link } from "react-router-dom";
 
-import { Toolbar } from "primereact/toolbar";
 import { Button } from "primereact/button";
+
+import Navbar from "../Navbar";
 
 function OrdersPage() {
   return (
     <div>
-      <Toolbar
+      <Navbar
         start={
           <div>
             <h2 className="m-0">Orders</h2>
-            <Link to="/products">Products</Link>
           </div>
         }
         end={

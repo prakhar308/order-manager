@@ -1,15 +1,14 @@
 import React from "react";
 
-import { Toolbar } from "primereact/toolbar";
 import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
-import { Sidebar } from "primereact/sidebar";
 import { Link } from "react-router-dom";
 
 import ProductGrid from "./ProductGrid";
 import ProductModal from "./ProductModal";
+import Navbar from "../Navbar";
 
 function ProductsPage() {
   const emptyProduct = {
@@ -76,14 +75,10 @@ function ProductsPage() {
     <div>
       <Toast ref={toast} position="top-center" />
       <div className="card">
-        <Toolbar
+        <Navbar
           className="mb-4"
           start={
             <div>
-              <Button
-                icon="pi pi-arrow-right"
-                onClick={() => setVisible(true)}
-              />
               <h2 className="m-0">Products</h2>
             </div>
           }
@@ -99,12 +94,6 @@ function ProductsPage() {
             />
           }
         />
-        <Sidebar visible={visible} onHide={() => setVisible(false)}>
-          <h2>Sidebar</h2>
-          <Link to="/">
-            <h2 className="m-0">Home</h2>
-          </Link>
-        </Sidebar>
         <ProductGrid
           products={products}
           setProduct={setProduct}

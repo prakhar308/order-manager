@@ -10,11 +10,10 @@ import { Button } from "primereact/button";
 import { produce } from "immer";
 import { Link } from "react-router-dom";
 import { Toast } from "primereact/toast";
-import { Toolbar } from "primereact/toolbar";
 
 import ProductSearch from "../ProductSearch";
-
 import orderReducer from "../../reducers/order-reducer";
+import Navbar from "../Navbar";
 
 function DailyOrderTable() {
   const [order, dispatch] = React.useReducer(orderReducer, {
@@ -229,7 +228,7 @@ function DailyOrderTable() {
   return (
     <div className="card p-fluid">
       <Toast ref={toast} position="top-center" />
-      <Toolbar
+      <Navbar
         className="mb-4"
         start={
           <Link to="/" tabIndex="-1">
