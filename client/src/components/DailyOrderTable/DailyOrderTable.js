@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "react-router-dom";
 
 import { InputNumber } from "primereact/InputNumber";
 import { DataTable } from "primereact/datatable";
@@ -15,8 +16,8 @@ import ProductSearch from "../ProductSearch";
 import orderReducer from "../../reducers/order-reducer";
 import Navbar from "../Navbar";
 
-function DailyOrderTable() {
-  const [order, dispatch] = React.useReducer(orderReducer, {
+function createEmptyOrder() {
+  return {
     id: crypto.randomUUID(),
     date: new Date(),
     items: [
@@ -29,31 +30,64 @@ function DailyOrderTable() {
       },
     ],
     total: null,
-  });
+  };
+}
+
+function DailyOrderTable() {
+  const location = useLocation();
+
+  let initalOrderState = null;
+  if (location.pathname.includes("/create-new-order")) {
+    initalOrderState = createEmptyOrder();
+  }
+  const [order, dispatch] = React.useReducer(orderReducer, initalOrderState);
+  const [orders, setOrders] = React.useState([]);
   const toast = React.useRef(null);
 
-  console.log(order);
+  let orderNotFound = false;
+
+  React.useEffect(() => {
+    const _orders = JSON.parse(localStorage.getItem("orders")) || [];
+    setOrders(_orders);
+    if (location.pathname.includes("/orders")) {
+      const id = location.pathname.split("/").pop();
+      const order = _orders.find((order) => order.id === id);
+      if (!order) {
+        return;
+      }
+      dispatch({
+        type: "update-order",
+        order: order,
+      });
+      dispatch({
+        type: "add-empty-item",
+      });
+    }
+  }, [location.pathname]);
+
+  // console.log(order);
 
   const saveOrder = () => {
     // remove the last empty item
-    const nextState = produce(order, (draftState) => {
+    const nextOrder = produce(order, (draftState) => {
       draftState.items.pop();
     });
 
-    let orders = JSON.parse(localStorage.getItem("orders"));
-
-    if (!orders) {
-      orders = [nextState];
-    } else {
-      const index = orders.findIndex((o) => o.id === order.id);
-      if (index !== -1) {
-        orders.splice(index, 1, nextState);
+    const nextOrders = produce(orders, (draftState) => {
+      if (!draftState) {
+        draftState = [nextOrder];
       } else {
-        orders.push(nextState);
+        const index = draftState.findIndex((o) => o.id === order.id);
+        if (index !== -1) {
+          draftState.splice(index, 1, nextOrder);
+        } else {
+          draftState.push(nextOrder);
+        }
       }
-    }
+    });
+    setOrders(nextOrders);
 
-    localStorage.setItem("orders", JSON.stringify(orders));
+    localStorage.setItem("orders", JSON.stringify(nextOrders));
     toast.current.show({
       severity: "success",
       summary: "Success",
@@ -231,9 +265,11 @@ function DailyOrderTable() {
       <Navbar
         className="mb-4"
         start={
-          <Link to="/" tabIndex="-1">
-            <h2 className="m-0">Orders</h2>
-          </Link>
+          <div className="flex gap-4 align-items-center">
+            <Link to="/" tabIndex="-1">
+              <h2 className="m-0">Orders</h2>
+            </Link>
+          </div>
         }
         end={
           <div className="flex gap-2">

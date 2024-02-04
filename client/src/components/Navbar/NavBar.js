@@ -4,6 +4,7 @@ import { Toolbar } from "primereact/toolbar";
 import { Button } from "primereact/button";
 import { Sidebar } from "primereact/sidebar";
 import { Link } from "react-router-dom";
+import { Ripple } from "primereact/Ripple";
 
 function Navbar({ start, end, className, ...delegatedProps }) {
   const [sideBarVisible, setSideBarVisible] = React.useState(false);
@@ -35,12 +36,34 @@ function Navbar({ start, end, className, ...delegatedProps }) {
         visible={sideBarVisible}
         onHide={() => setSideBarVisible(false)}
       >
-        <Link to="/">
-          <h2 className="m-0">Orders</h2>
-        </Link>
-        <Link to="/products">
-          <h2 className="m-0">Products</h2>
-        </Link>
+        <div>
+          <ul className="list-none p-3 m-0">
+            <li>
+              <ul className="list-none p-0 m-0 overflow-hidden">
+                <li>
+                  <Link
+                    to="/"
+                    className="no-underline p-ripple flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors w-full"
+                  >
+                    <i className="pi pi-history mr-2"></i>
+                    <span className="font-medium">Orders</span>
+                    <Ripple />
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/products"
+                    className="no-underline p-ripple flex align-items-center cursor-pointer p-3 border-round text-700 hover:surface-100 transition-duration-150 transition-colors w-full"
+                  >
+                    <i className="pi pi-list mr-2"></i>
+                    <span className="font-medium">Products</span>
+                    <Ripple />
+                  </Link>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
       </Sidebar>
     </div>
   );

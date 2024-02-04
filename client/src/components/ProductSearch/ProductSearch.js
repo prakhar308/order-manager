@@ -32,6 +32,7 @@ function ProductSearch({ product, onChange }) {
       onChange={(e) => handleProductChange(e)}
       onHide={handleHide}
       filter
+      filterBy="code,name"
       showClear
     />
   );
